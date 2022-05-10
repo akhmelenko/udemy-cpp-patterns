@@ -4,111 +4,102 @@
 #include <vector>
 #include <memory>
 
-enum class Color{RED, GREEN, BLUE};
-enum class Size{SMALL, MEDIUM, BIG}; 
+enum class Color
+{
+    RED,
+    GREEN,
+    BLUE
+};
+enum class Size
+{
+    SMALL,
+    MEDIUM,
+    BIG
+};
 
-struct Product{
-    std::string _name;
-    Color _color;
-    Size _size;
+struct Product
+{
+    std::string name;
+    Color color;
+    Size size;
     Product(const std::string &name, const Color color, const Size size)
-        : _name(name), _color(color), _size(size){}    
+        : name(name), color(color), size(size) {}
 };
 
 typedef std::vector<std::shared_ptr<Product>> pList;
 
-template <typename T> 
-class Specification{
-    virtual bool IsSatisfied(T* item) = 0;
+template <typename T>
+class Specification
+{
+public:
+    virtual bool IsSatisfied(std::shared_ptr<T> item) = 0;
 };
 
-class SpecificationColor: Specification<Product>{
+class SpecificationColor : public Specification<Product>
+{
     Color color;
+
 public:
-    explicit SpecificationColor(const Color color): color(color){}
-    bool IsSatisfied(Product* item) override {
-        return item->_color == color;
+    explicit SpecificationColor(const Color color) : color(color) {}
+    virtual bool IsSatisfied(std::shared_ptr<Product> item) override
+    {
+        return item->color == color;
     }
 };
 
-template <typename T> class BetterFilter{
+class SpecificationSize : public Specification<Product>
+{
+    Size size;
+
+public:
+    explicit SpecificationSize(const Size size) : size(size) {}
+    virtual bool IsSatisfied(std::shared_ptr<Product> item) override
+    {
+        return item->size == size;
+    }
+};
+
+template <typename T>
+class BetterFilter
+{
 public:
     static std::vector<std::shared_ptr<T>> Filter(
-        std::vector<std::shared_ptr<T>> items,
-        Specification<T> &spec)
+        std::vector<std::shared_ptr<T>> &items,
+        Specification<T> *spec)
     {
         std::vector<std::shared_ptr<T>> result;
-        for (auto &item: items){
-            if (IsSatisfied(item)){
-                result.push_back(item);                    
-            }
-        }
-        return result;
-    }
-    static std::vector<std::shared_ptr<T>> ByColor(
-        std::vector<std::shared_ptr<T>> &items, Color color){
-        std::vector<std::shared_ptr<T>> result;
-        for (auto &item: items){
-            if (item->_color == color){
-                result.push_back(item);                    
-            }
-        }
-        return result;
-    }
-    static std::vector<std::shared_ptr<T>> BySize(
-        std::vector<std::shared_ptr<T>> &items, 
-        Size size)
-    {
-        std::vector<std::shared_ptr<T>> result;
-        for (auto &item: items)
-            if (item->_size == size){
+        for (auto &item : items)
+        {
+            if (spec->IsSatisfied(item))
+            {
                 result.push_back(item);
             }
-        return result;
-    }
-    static std::vector<std::shared_ptr<T>> ByColorAndSize(
-        std::vector<std::shared_ptr<T>> &items, 
-        Color color, 
-        Size size)
-    {
-        std::vector<std::shared_ptr<T>> result;
-        for (auto &item: items)
-            if (item->_color == color && item->_size == size){
-                result.push_back(item);
-            }
+        }
         return result;
     }
 };
 
-void PrintProducts(const std::vector<std::shared_ptr<Product>> &products){
-    for (auto &product: products)
-        std::cout << product->_name << "\n";
+void PrintProducts(const pList &products)
+{
+    for (auto &product : products)
+        std::cout << product->name << "\n";
 }
 
-int main(){
+int main()
+{
     std::shared_ptr<Product> tree = std::make_shared<Product>("Tree", Color::GREEN, Size::BIG);
     std::shared_ptr<Product> house = std::make_shared<Product>("House", Color::BLUE, Size::BIG);
     std::shared_ptr<Product> apple = std::make_shared<Product>("Apple", Color::RED, Size::SMALL);
-    std::vector<std::shared_ptr<Product>> all{
-        tree, 
-        house,
-        apple
-    };
-    // std::vector<std::shared_ptr<Product>> green = 
-    //     ProductFilter::ByColor(all, Color::GREEN); 
-    // std::vector<std::shared_ptr<Product>> big = 
-    //     ProductFilter::BySize(all, Size::BIG);
-    // std::vector<std::shared_ptr<Product>> greenBig = 
-    //     ProductFilter::ByColorAndSize(all, Color::GREEN, Size::BIG);    
-    // std::cout << "green:\n";
-    // PrintProducts(green);
-    // std::cout << "big:\n";
-    // PrintProducts(big);
-    // std::cout << "green and big:\n";
-    // PrintProducts(greenBig);
+    std::vector<std::shared_ptr<Product>> all{tree, house, apple};
 
-    SpecificationColor spGreen(Color::GREEN);
+    Specification<Product> *spGreen = new SpecificationColor(Color::GREEN);
+    Specification<Product> *spBig = new SpecificationSize(Size::BIG);
     pList green = BetterFilter<Product>::Filter(all, spGreen);
+    pList big = BetterFilter<Product>::Filter(all, spBig);
+    std::cout << "green:\n";
+    PrintProducts(green);
+    std::cout << "big:\n";
+    PrintProducts(big);
 
     return 0;
 }
