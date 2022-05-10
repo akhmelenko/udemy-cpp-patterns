@@ -1,0 +1,4 @@
+make.exe -f e:\Toxic\_Study\Udemy\CPP_Patterns\memento\make --dry-run --keep-going --print-directory
+'make.exe' is not recognized as an internal or external command,
+operable program or batch file.
+
